@@ -1,0 +1,647 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Red Phantom Chat</title>
+    <link rel="icon" href="./Images/Red Phantom.png" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <style>
+      :root {
+        --bg-dark: #09090b;
+        --sidebar-bg: #111113;
+        --accent: #ef4444;
+        --border-color: rgba(255, 255, 255, 0.05);
+        --input-bg: #18181b;
+      }
+      ::-webkit-scrollbar {
+        width: 7px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--accent);
+        border-radius: 10px;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: var(--bg-dark);
+        color: #e4e4e7;
+        height: 100vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      nav {
+        height: 60px;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 20px;
+        background: var(--bg-dark);
+        z-index: 50;
+      }
+      .back-btn {
+        padding: 6px 16px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        font-size: 0.8rem;
+        transition: all 0.2s;
+        background: #18181b;
+      }
+      .back-btn:hover {
+        background: var(--accent);
+        color: white;
+        border-color: var(--accent);
+      }
+      .layout-container {
+        flex: 1;
+        display: flex;
+        overflow: hidden;
+        position: relative;
+      }
+      aside {
+        width: 260px;
+        background-color: var(--sidebar-bg);
+        border-right: 1px solid var(--border-color);
+        display: flex;
+        flex-direction: column;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        z-index: 40;
+      }
+      aside.collapsed {
+        margin-left: -260px;
+      }
+      .sidebar-header {
+        padding: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .menu-btn {
+        cursor: pointer;
+        color: #a1a1aa;
+        transition: 0.2s;
+        padding: 5px;
+        border-radius: 5px;
+      }
+      .menu-btn:hover {
+        color: white;
+        background: #27272a;
+      }
+      #searchBarContainer {
+        padding: 0 15px 10px;
+        display: none;
+      }
+      #searchInput {
+        width: 100%;
+        background: #18181b;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 6px 10px;
+        font-size: 0.8rem;
+        color: white;
+        outline: none;
+      }
+      .sidebar-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 16px;
+        margin: 4px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        color: #a1a1aa;
+        transition: 0.2s;
+        position: relative;
+      }
+      .sidebar-item:hover,
+      .sidebar-item.active {
+        background: #1e1e21;
+        color: white;
+      }
+      .section-label {
+        padding: 20px 24px 10px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: #525252;
+        text-transform: uppercase;
+      }
+      .main-chat {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        width: 100%;
+      }
+      .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px 15%;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+      }
+      .message-bubble {
+        max-width: 100%;
+        padding: 12px 16px;
+        border-radius: 12px;
+        font-size: 0.95rem;
+        line-height: 1.6;
+      }
+      .bot .message-bubble strong {
+        color: var(--accent);
+        display: block;
+        margin-top: 10px;
+        text-transform: uppercase;
+        font-size: 0.9rem;
+      }
+      .bot .message-bubble li {
+        margin-left: 20px;
+        list-style-type: square;
+        color: #d1d1d1;
+        margin-bottom: 4px;
+      }
+      .user .message-bubble {
+        background: #27272a;
+        color: white;
+        align-self: flex-end;
+        max-width: 85%;
+      }
+      .bot .message-bubble {
+        background: transparent;
+        align-self: flex-start;
+        border: 1px solid var(--border-color);
+        color: #e4e4e7;
+      }
+      .input-wrapper {
+        transition: all 0.5s ease;
+        padding: 20px 15%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .input-wrapper.centered {
+        position: absolute;
+        top: 40%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 100%;
+      }
+      .input-container {
+        width: 100%;
+        max-width: 768px;
+        background: var(--input-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        padding: 10px 14px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      input#userInput {
+        flex: 1;
+        background: transparent;
+        border: none;
+        outline: none;
+        color: white;
+        font-size: 1rem;
+      }
+      .send-btn {
+        background: var(--accent);
+        color: white;
+        padding: 8px 20px;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .welcome-text {
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-bottom: 30px;
+        color: white;
+        text-align: center;
+      }
+      .code-container {
+        margin: 20px 0;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .code-header {
+        display: flex;
+        justify-content: flex-end;
+        background: #1a1a1a;
+        padding: 8px 15px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      }
+      .copy-btn {
+        background: transparent;
+        border: 1px solid #444;
+        color: #888;
+        font-size: 0.75rem;
+        padding: 3px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      pre {
+        background: #0d0d0d !important;
+        padding: 15px !important;
+        margin: 0 !important;
+        overflow-x: auto;
+      }
+      .typing::after {
+        content: "_";
+        animation: blink 0.8s infinite;
+        color: var(--accent);
+      }
+      @keyframes blink {
+        50% {
+          opacity: 0;
+        }
+      }
+      .dropdown-menu {
+        position: absolute;
+        background: #18181b;
+        border: 1px solid #27272a;
+        border-radius: 8px;
+        padding: 6px;
+        z-index: 100;
+        right: 40px;
+        display: none;
+      }
+      .dropdown-item {
+        padding: 6px 12px;
+        font-size: 0.75rem;
+        color: #a1a1aa;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .dropdown-item:hover {
+        background: #27272a;
+        color: white;
+      }
+      .action-trigger {
+        opacity: 0;
+        cursor: pointer;
+        color: #71717a;
+        padding: 0 4px;
+      }
+      .sidebar-item:hover .action-trigger {
+        opacity: 1;
+      }
+      .delete-btn {
+        opacity: 0;
+        cursor: pointer;
+        color: #525252;
+        font-size: 1.1rem;
+        padding: 0 5px;
+      }
+      .sidebar-item:hover .delete-btn {
+        opacity: 1;
+      }
+      .hidden {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <div class="flex items-center gap-3">
+        <div id="toggleSidebar" class="menu-btn">
+          <svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
+          </svg>
+        </div>
+        <div class="flex items-center gap-2">
+          <div
+            class="w-7 h-7 bg-red-600 rounded flex items-center justify-center font-bold text-white text-[10px]"
+          >
+            RP
+          </div>
+          <span class="font-bold text-sm tracking-tight">Red Phantom Chat</span>
+        </div>
+      </div>
+      <a href="https://bot-ruby-delta.vercel.app/index.html" class="back-btn" style="text-decoration: none;">Back</a>
+    </nav>
+
+    <div class="layout-container">
+      <aside id="sidebar">
+        <div class="sidebar-header">
+          <span class="text-xs font-bold text-zinc-500">NAVIGATION</span>
+          <span id="openSearch" class="menu-btn">
+            <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
+              <path
+                d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 1 0 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
+              />
+            </svg>
+          </span>
+        </div>
+        <div id="searchBarContainer">
+          <input type="text" id="searchInput" placeholder="Search chats..." />
+        </div>
+        <div class="sidebar-item active" id="newChatBtn">
+          <span>📝</span> New chat
+        </div>
+        <div class="sidebar-item" id="favFilterBtn">
+          <span>⭐</span> Favorite
+        </div>
+        <div class="section-label">Chats</div>
+        <div id="sessionsList" class="flex-1 overflow-y-auto px-2"></div>
+        <div class="p-4 border-t border-zinc-900">
+          <div
+            id="clearAllBtn"
+            class="sidebar-item text-zinc-500 hover:text-red-400"
+            style="margin: 0"
+          >
+            <span>🗑️</span> Clear All History
+          </div>
+        </div>
+      </aside>
+
+      <main class="main-chat">
+        <div id="chatArea" class="chat-messages"></div>
+        <div id="inputWrapper" class="input-wrapper centered">
+          <h2 id="welcomeText" class="welcome-text">
+            How can I help you today?
+          </h2>
+          <div class="input-container">
+            <input
+              id="userInput"
+              type="text"
+              placeholder="Message Red Phantom..."
+              autocomplete="off"
+            />
+            <button id="sendBtn" class="send-btn">Send</button>
+          </div>
+          <p class="text-[10px] text-zinc-600 mt-4 text-center">
+            Red Phantom Security Protocol Active.
+          </p>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      const sidebar = document.getElementById("sidebar");
+      const sessionsList = document.getElementById("sessionsList");
+      const chatArea = document.getElementById("chatArea");
+      const userInput = document.getElementById("userInput");
+      const sendBtn = document.getElementById("sendBtn");
+      const inputWrapper = document.getElementById("inputWrapper");
+      const searchBarContainer = document.getElementById("searchBarContainer");
+      const searchInput = document.getElementById("searchInput");
+      const favFilterBtn = document.getElementById("favFilterBtn");
+      const clearAllBtn = document.getElementById("clearAllBtn");
+
+      let currentSession =
+        localStorage.getItem("current_session") || "chat_" + Date.now();
+      let showingFavorites = false;
+
+      document.getElementById("toggleSidebar").onclick = () =>
+        sidebar.classList.toggle("collapsed");
+      document.getElementById("openSearch").onclick = () => {
+        searchBarContainer.style.display =
+          searchBarContainer.style.display === "block" ? "none" : "block";
+        if (searchBarContainer.style.display === "block") searchInput.focus();
+      };
+
+      searchInput.oninput = () => {
+        const val = searchInput.value.toLowerCase();
+        Array.from(sessionsList.getElementsByClassName("sidebar-item")).forEach(
+          (item) => {
+            item.style.display = item.textContent.toLowerCase().includes(val)
+              ? "flex"
+              : "none";
+          },
+        );
+      };
+
+      favFilterBtn.onclick = () => {
+        showingFavorites = !showingFavorites;
+        favFilterBtn.classList.toggle("active", showingFavorites);
+        loadSessions();
+      };
+
+      clearAllBtn.onclick = () => {
+        if (confirm("Purge all security logs and chat history?")) {
+          Object.keys(localStorage).forEach((key) => {
+            if (key.startsWith("rp_chat_") || key.startsWith("meta_rp_chat_"))
+              localStorage.removeItem(key);
+          });
+          currentSession = "chat_" + Date.now();
+          localStorage.setItem("current_session", currentSession);
+          loadSessions();
+          loadChat();
+        }
+      };
+
+      function loadSessions() {
+        sessionsList.innerHTML = "";
+        const keys = Object.keys(localStorage)
+          .filter((k) => k.startsWith("rp_chat_"))
+          .sort()
+          .reverse();
+        keys.forEach((k) => {
+          let chatData = JSON.parse(localStorage.getItem(k) || "[]");
+          let metadata = JSON.parse(localStorage.getItem("meta_" + k) || "{}");
+          if (showingFavorites && !metadata.isFavorite) return;
+          let sessionId = k.replace("rp_chat_", "");
+          let item = document.createElement("div");
+          item.className = `sidebar-item ${currentSession === sessionId ? "active" : ""}`;
+          let titleText =
+            chatData.find((m) => m.from === "user")?.text || "New Conversation";
+          item.innerHTML = `
+            <span class="truncate flex-1" onclick="switchSession('${sessionId}')">${metadata.isFavorite ? "⭐ " : ""}${titleText}</span>
+            <div class="relative flex items-center">
+                <span class="action-trigger" onclick="toggleDropdown(event, '${sessionId}')">⋮</span>
+                <span class="delete-btn" onclick="event.stopPropagation(); deleteSession('${sessionId}')">×</span>
+                <div id="drop-${sessionId}" class="dropdown-menu">
+                    <div class="dropdown-item" onclick="toggleStar('${sessionId}')">${metadata.isFavorite ? "Remove Star" : "Add to Star"}</div>
+                </div>
+            </div>`;
+          sessionsList.appendChild(item);
+        });
+      }
+
+      function toggleDropdown(e, id) {
+        e.stopPropagation();
+        document.querySelectorAll(".dropdown-menu").forEach((d) => {
+          if (d.id !== `drop-${id}`) d.style.display = "none";
+        });
+        const drop = document.getElementById(`drop-${id}`);
+        drop.style.display = drop.style.display === "block" ? "none" : "block";
+      }
+
+      function toggleStar(id) {
+        let meta = JSON.parse(
+          localStorage.getItem("meta_rp_chat_" + id) || "{}",
+        );
+        meta.isFavorite = !meta.isFavorite;
+        localStorage.setItem("meta_rp_chat_" + id, JSON.stringify(meta));
+        loadSessions();
+      }
+
+      function switchSession(id) {
+        currentSession = id;
+        localStorage.setItem("current_session", id);
+        loadChat();
+        loadSessions();
+      }
+
+      function deleteSession(id) {
+        localStorage.removeItem("rp_chat_" + id);
+        localStorage.removeItem("meta_rp_chat_" + id);
+        if (currentSession === id) {
+          currentSession = "chat_" + Date.now();
+          localStorage.setItem("current_session", currentSession);
+        }
+        loadSessions();
+        loadChat();
+      }
+
+      document.getElementById("newChatBtn").onclick = () => {
+        currentSession = "chat_" + Date.now();
+        localStorage.setItem("current_session", currentSession);
+        loadChat();
+        loadSessions();
+      };
+
+      function appendMessage(content, from, isHistory = false) {
+        const row = document.createElement("div");
+        row.className = `flex w-full ${from === "user" ? "user" : "bot"}`;
+        const bubble = document.createElement("div");
+        bubble.className = "message-bubble";
+        row.appendChild(bubble);
+        chatArea.appendChild(row);
+
+        if (from === "bot" && !isHistory) {
+          bubble.classList.add("typing");
+          let words = content.split(" ");
+          let i = 0;
+          let timer = setInterval(() => {
+            if (i < words.length) {
+              bubble.innerHTML = prepareContent(
+                words.slice(0, i + 1).join(" "),
+              );
+              i++;
+              chatArea.scrollTop = chatArea.scrollHeight;
+            } else {
+              clearInterval(timer);
+              bubble.classList.remove("typing");
+              Prism.highlightAllUnder(bubble);
+            }
+          }, 30);
+        } else {
+          bubble.innerHTML = prepareContent(content);
+          Prism.highlightAllUnder(bubble);
+        }
+        chatArea.scrollTop = chatArea.scrollHeight;
+      }
+
+      function prepareContent(raw) {
+        let codeBlocks = [];
+        let cleanText = raw
+          .replace(/```(\w+)?\n([\s\S]*?)```/g, function (m, lang, code) {
+            const id = `BLOCK_${codeBlocks.length}`;
+            codeBlocks.push(
+              `<div class="code-container"><div class="code-header"><button class="copy-btn" onclick="copyCode(this)">Copy Source</button></div><pre><code class="language-${lang || "javascript"}">${code.replace(/</g, "&lt;").replace(/>/g, "&gt;").trim()}</code></pre></div>`,
+            );
+            return id;
+          })
+          .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+          .replace(/^\s*-\s+(.*)/gm, "<li>$1</li>")
+          .replace(/\n/g, "<br>");
+
+        codeBlocks.forEach((b, i) => {
+          cleanText = cleanText.replace(`BLOCK_${i}`, b);
+        });
+        return cleanText;
+      }
+
+      function copyCode(btn) {
+        const code = btn.parentElement.nextElementSibling.innerText;
+        navigator.clipboard.writeText(code);
+        btn.innerText = "Captured!";
+        setTimeout(() => {
+          btn.innerText = "Copy Source";
+        }, 2000);
+      }
+
+      async function sendMessage() {
+        const text = userInput.value.trim();
+        if (!text) return;
+        inputWrapper.classList.remove("centered");
+        document.getElementById("welcomeText").classList.add("hidden");
+        appendMessage(text, "user");
+        saveMsg(text, "user");
+        userInput.value = "";
+        try {
+          const res = await fetch(
+            "https://red-phantom-chat-bot-back-wfjk.vercel.app/api/chat",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                sessionId: currentSession,
+                message: text,
+              }),
+            },
+          );
+          const data = await res.json();
+          appendMessage(data.reply, "bot");
+          saveMsg(data.reply, "bot");
+        } catch {
+          appendMessage("Critical: Analysis engine offline.", "bot");
+        }
+        loadSessions();
+      }
+
+      function saveMsg(text, from) {
+        let chat = JSON.parse(
+          localStorage.getItem("rp_chat_" + currentSession) || "[]",
+        );
+        chat.push({ from, text });
+        localStorage.setItem("rp_chat_" + currentSession, JSON.stringify(chat));
+      }
+
+      function loadChat() {
+        chatArea.innerHTML = "";
+        let chat = JSON.parse(
+          localStorage.getItem("rp_chat_" + currentSession) || "[]",
+        );
+        if (chat.length > 0) {
+          inputWrapper.classList.remove("centered");
+          document.getElementById("welcomeText").classList.add("hidden");
+          chat.forEach((m) => appendMessage(m.text, m.from, true));
+        } else {
+          inputWrapper.classList.add("centered");
+          document.getElementById("welcomeText").classList.remove("hidden");
+        }
+      }
+
+      sendBtn.onclick = sendMessage;
+      userInput.onkeypress = (e) => {
+        if (e.key === "Enter") sendMessage();
+      };
+      window.onclick = () =>
+        document
+          .querySelectorAll(".dropdown-menu")
+          .forEach((d) => (d.style.display = "none"));
+      loadSessions();
+      loadChat();
+    </script>
+  </body>
+</html>
