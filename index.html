@@ -261,7 +261,7 @@
         background: #0d0d0d !important;
         padding: 15px !important;
         margin: 0 !important;
-        white-space: pre !important;
+        overflow-x: auto;
       }
       .typing::after {
         content: "_";
@@ -313,6 +313,9 @@
       .sidebar-item:hover .delete-btn {
         opacity: 1;
       }
+      .hidden {
+        display: none;
+      }
     </style>
   </head>
   <body>
@@ -339,17 +342,13 @@
       <aside id="sidebar">
         <div class="sidebar-header">
           <span class="text-xs font-bold text-zinc-500">NAVIGATION</span>
-          <span id="openSearch" class="menu-btn"
-            ><svg
-              width="18"
-              height="18"
-              fill="currentColor"
-              viewBox="0 0 24 24"
-            >
+          <span id="openSearch" class="menu-btn">
+            <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
               <path
                 d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 1 0 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
-              /></svg
-          ></span>
+              />
+            </svg>
+          </span>
         </div>
         <div id="searchBarContainer">
           <input type="text" id="searchInput" placeholder="Search chats..." />
@@ -542,12 +541,12 @@
             } else {
               clearInterval(timer);
               bubble.classList.remove("typing");
-              if (content.includes("```")) Prism.highlightAllUnder(bubble);
+              Prism.highlightAllUnder(bubble);
             }
-          }, 40);
+          }, 30);
         } else {
           bubble.innerHTML = prepareContent(content);
-          if (content.includes("```")) Prism.highlightAllUnder(bubble);
+          Prism.highlightAllUnder(bubble);
         }
         chatArea.scrollTop = chatArea.scrollHeight;
       }
@@ -558,13 +557,14 @@
           .replace(/```(\w+)?\n([\s\S]*?)```/g, function (m, lang, code) {
             const id = `BLOCK_${codeBlocks.length}`;
             codeBlocks.push(
-              `<div class="code-container"><div class="code-header"><button class="copy-btn" onclick="copyCode(this)">Copy Source</button></div><pre><code class="language-${lang || "javascript"}">${code.trim()}</code></pre></div>`,
+              `<div class="code-container"><div class="code-header"><button class="copy-btn" onclick="copyCode(this)">Copy Source</button></div><pre><code class="language-${lang || "javascript"}">${code.replace(/</g, "&lt;").replace(/>/g, "&gt;").trim()}</code></pre></div>`,
             );
             return id;
           })
           .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
           .replace(/^\s*-\s+(.*)/gm, "<li>$1</li>")
           .replace(/\n/g, "<br>");
+
         codeBlocks.forEach((b, i) => {
           cleanText = cleanText.replace(`BLOCK_${i}`, b);
         });
@@ -589,11 +589,17 @@
         saveMsg(text, "user");
         userInput.value = "";
         try {
-          const res = await fetch("http://localhost:3000/api/chat", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ sessionId: currentSession, message: text }),
-          });
+          const res = await fetch(
+            "https://red-phantom-chat-bot-back.vercel.app/api/chat",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                sessionId: currentSession,
+                message: text,
+              }),
+            },
+          );
           const data = await res.json();
           appendMessage(data.reply, "bot");
           saveMsg(data.reply, "bot");
