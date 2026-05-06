@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"
+    />
+    <title>Red Phantom Chat</title>
+    <link rel="icon" href="./Images/Red Phantom.png" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <style>
+      :root {
+        --bg-dark: #09090b;
+        --sidebar-bg: #111113;
+        --accent: #ef4444;
+        --border-color: rgba(255, 255, 255, 0.05);
+        --input-bg: #18181b;
+      }
+      ::-webkit-scrollbar {
+        width: 5px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--accent);
+        border-radius: 10px;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: var(--bg-dark);
+        color: #e4e4e7;
+        height: 100vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      nav {
+        height: 60px;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 15px;
+        background: var(--bg-dark);
+        z-index: 60;
+      }
+      .back-btn {
+        padding: 6px 14px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        font-size: 0.8rem;
+        background: #18181b;
+        color: white;
+        text-decoration: none;
+      }
+      .layout-container {
+        flex: 1;
+        display: flex;
+        overflow: hidden;
+        position: relative;
+      }
+      aside {
+        width: 280px;
+        background-color: var(--sidebar-bg);
+        border-right: 1px solid var(--border-color);
+        display: flex;
+        flex-direction: column;
+        transition: transform 0.3s ease;
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 50;
+        transform: translateX(-100%);
+      }
+      aside.open {
+        transform: translateX(0);
+      }
+      @media (min-width: 1024px) {
+        aside {
+          position: relative;
+          transform: translateX(0);
+        }
+        aside.collapsed {
+          margin-left: -280px;
+          transform: translateX(0);
+        }
+      }
+      .sidebar-overlay {
+        display: none;
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 45;
+      }
+      aside.open + .sidebar-overlay {
+        display: block;
+      }
+      .main-chat {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        width: 100%;
+        min-width: 0;
+      }
+      .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px 15px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      @media (min-width: 768px) {
+        .chat-messages {
+          padding: 20px 15%;
+        }
+      }
+      .message-bubble {
+        max-width: 90%;
+        padding: 12px 16px;
+        border-radius: 12px;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        word-wrap: break-word;
+      }
+      .user .message-bubble {
+        background: #27272a;
+        align-self: flex-end;
+        color: white;
+      }
+      .bot .message-bubble {
+        background: transparent;
+        border: 1px solid var(--border-color);
+        align-self: flex-start;
+      }
+      .input-wrapper {
+        padding: 15px;
+        width: 100%;
+        background: var(--bg-dark);
+        transition: all 0.3s ease;
+      }
+      .input-wrapper.centered {
+        position: absolute;
+        top: 40%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        padding: 0 20px;
+      }
+      .input-container {
+        width: 100%;
+        max-width: 768px;
+        margin: 0 auto;
+        background: var(--input-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 10px 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      input#userInput {
+        flex: 1;
+        background: transparent;
+        border: none;
+        outline: none;
+        color: white;
+        font-size: 1rem;
+      }
+      .send-btn {
+        background: var(--accent);
+        color: white;
+        padding: 8px 18px;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .welcome-text {
+        font-size: 1.6rem;
+        font-weight: 700;
+        margin-bottom: 20px;
+        text-align: center;
+        color: white;
+      }
+      .sidebar-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 16px;
+        margin: 4px 8px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        color: #a1a1aa;
+        transition: 0.2s;
+      }
+      .sidebar-item:hover,
+      .sidebar-item.active {
+        background: #1e1e21;
+        color: white;
+      }
+      .code-container {
+        margin: 15px 0;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .code-header {
+        background: #1a1a1a;
+        padding: 8px 15px;
+        display: flex;
+        justify-content: flex-end;
+      }
+      .copy-btn {
+        background: transparent;
+        border: 1px solid #444;
+        color: #888;
+        font-size: 0.7rem;
+        padding: 3px 8px;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      pre {
+        background: #0d0d0d !important;
+        padding: 15px !important;
+        margin: 0 !important;
+        overflow-x: auto;
+      }
+      .hidden {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <div class="flex items-center gap-3">
+        <div
+          id="toggleSidebar"
+          class="cursor-pointer p-1 hover:bg-zinc-800 rounded"
+        >
+          <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
+          </svg>
+        </div>
+        <div class="flex items-center gap-2">
+          <div
+            class="w-8 h-8 bg-red-600 rounded flex items-center justify-center font-bold text-white text-xs"
+          >
+            RP
+          </div>
+          <span class="font-bold text-sm tracking-tight hidden sm:block"
+            >Red Phantom Chat</span
+          >
+        </div>
+      </div>
+      <a href="https://bot-ruby-delta.vercel.app/index.html" class="back-btn"
+        >Back</a
+      >
+    </nav>
+
+    <div class="layout-container">
+      <aside id="sidebar">
+        <div class="p-4 flex justify-between items-center">
+          <span class="text-xs font-bold text-zinc-500 uppercase"
+            >Navigation</span
+          >
+          <span
+            id="openSearch"
+            class="cursor-pointer text-zinc-400 p-1 hover:text-white"
+          >
+            <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
+              <path
+                d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 1 0 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
+              />
+            </svg>
+          </span>
+        </div>
+        <div id="searchBarContainer" class="px-4 mb-2 hidden">
+          <input
+            type="text"
+            id="searchInput"
+            class="w-full bg-zinc-900 border border-zinc-800 rounded-md p-2 text-xs text-white outline-none"
+            placeholder="Search chats..."
+          />
+        </div>
+        <div class="sidebar-item active" id="newChatBtn">
+          <span>📝</span> New chat
+        </div>
+        <div class="sidebar-item" id="favFilterBtn">
+          <span>⭐</span> Favorite
+        </div>
+        <div class="px-5 py-4 text-[10px] font-bold text-zinc-600 uppercase">
+          History
+        </div>
+        <div id="sessionsList" class="flex-1 overflow-y-auto"></div>
+        <div class="p-4 border-t border-zinc-900">
+          <div
+            id="clearAllBtn"
+            class="sidebar-item text-zinc-500 hover:text-red-400 m-0"
+          >
+            <span>🗑️</span> Clear History
+          </div>
+        </div>
+      </aside>
+
+      <div id="sidebarOverlay" class="sidebar-overlay"></div>
+
+      <main class="main-chat">
+        <div id="chatArea" class="chat-messages"></div>
+        <div id="inputWrapper" class="input-wrapper centered">
+          <h2 id="welcomeText" class="welcome-text">
+            How can I help you today?
+          </h2>
+          <div class="input-container">
+            <input
+              id="userInput"
+              type="text"
+              placeholder="Message Red Phantom..."
+              autocomplete="off"
+            />
+            <button id="sendBtn" class="send-btn">Send</button>
+          </div>
+          <p
+            id="footerTag"
+            class="text-[10px] text-zinc-600 mt-4 text-center uppercase tracking-widest"
+          >
+            Security Protocol Active
+          </p>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      const sidebar = document.getElementById("sidebar");
+      const sidebarOverlay = document.getElementById("sidebarOverlay");
+      const sessionsList = document.getElementById("sessionsList");
+      const chatArea = document.getElementById("chatArea");
+      const userInput = document.getElementById("userInput");
+      const sendBtn = document.getElementById("sendBtn");
+      const inputWrapper = document.getElementById("inputWrapper");
+      const welcomeText = document.getElementById("welcomeText");
+      const footerTag = document.getElementById("footerTag");
+
+      let currentSession =
+        localStorage.getItem("current_session") || "chat_" + Date.now();
+      let showingFavorites = false;
+
+      document.getElementById("toggleSidebar").onclick = (e) => {
+        e.stopPropagation();
+        if (window.innerWidth < 1024) {
+          sidebar.classList.toggle("open");
+        } else {
+          sidebar.classList.toggle("collapsed");
+        }
+      };
+
+      sidebarOverlay.onclick = () => sidebar.classList.remove("open");
+
+      document.getElementById("openSearch").onclick = () => {
+        document
+          .getElementById("searchBarContainer")
+          .classList.toggle("hidden");
+        document.getElementById("searchInput").focus();
+      };
+
+      document.getElementById("searchInput").oninput = (e) => {
+        const val = e.target.value.toLowerCase();
+        Array.from(sessionsList.getElementsByClassName("sidebar-item")).forEach(
+          (item) => {
+            item.style.display = item.textContent.toLowerCase().includes(val)
+              ? "flex"
+              : "none";
+          },
+        );
+      };
+
+      document.getElementById("favFilterBtn").onclick = function () {
+        showingFavorites = !showingFavorites;
+        this.classList.toggle("active", showingFavorites);
+        loadSessions();
+      };
+
+      document.getElementById("clearAllBtn").onclick = () => {
+        if (confirm("Purge all logs?")) {
+          Object.keys(localStorage).forEach((k) => {
+            if (k.startsWith("rp_chat_") || k.startsWith("meta_rp_chat_"))
+              localStorage.removeItem(k);
+          });
+          currentSession = "chat_" + Date.now();
+          localStorage.setItem("current_session", currentSession);
+          loadSessions();
+          loadChat();
+        }
+      };
+
+      function loadSessions() {
+        sessionsList.innerHTML = "";
+        const keys = Object.keys(localStorage)
+          .filter((k) => k.startsWith("rp_chat_"))
+          .sort()
+          .reverse();
+        keys.forEach((k) => {
+          const chatData = JSON.parse(localStorage.getItem(k) || "[]");
+          const metadata = JSON.parse(
+            localStorage.getItem("meta_" + k) || "{}",
+          );
+          if (showingFavorites && !metadata.isFavorite) return;
+          const sessionId = k.replace("rp_chat_", "");
+          const item = document.createElement("div");
+          item.className = `sidebar-item ${currentSession === sessionId ? "active" : ""}`;
+          const title =
+            chatData.find((m) => m.from === "user")?.text.substring(0, 20) ||
+            "New chat";
+          item.innerHTML = `<span class="truncate flex-1" onclick="switchSession('${sessionId}')">${metadata.isFavorite ? "⭐ " : ""}${title}</span>
+          <span onclick="event.stopPropagation(); deleteSession('${sessionId}')" class="text-zinc-600 hover:text-white px-1">×</span>`;
+          sessionsList.appendChild(item);
+        });
+      }
+
+      function switchSession(id) {
+        currentSession = id;
+        localStorage.setItem("current_session", id);
+        if (window.innerWidth < 1024) sidebar.classList.remove("open");
+        loadChat();
+        loadSessions();
+      }
+
+      function deleteSession(id) {
+        localStorage.removeItem("rp_chat_" + id);
+        localStorage.removeItem("meta_rp_chat_" + id);
+        if (currentSession === id) {
+          currentSession = "chat_" + Date.now();
+          localStorage.setItem("current_session", currentSession);
+        }
+        loadSessions();
+        loadChat();
+      }
+
+      document.getElementById("newChatBtn").onclick = () => {
+        currentSession = "chat_" + Date.now();
+        localStorage.setItem("current_session", currentSession);
+        if (window.innerWidth < 1024) sidebar.classList.remove("open");
+        loadChat();
+        loadSessions();
+      };
+
+      function prepareContent(raw) {
+        let codeBlocks = [];
+        let cleanText = raw
+          .replace(/```(\w+)?\n([\s\S]*?)```/g, (m, lang, code) => {
+            const id = `BLOCK_${codeBlocks.length}`;
+            codeBlocks.push(
+              `<div class="code-container"><div class="code-header"><button class="copy-btn" onclick="copyCode(this)">Copy</button></div><pre><code class="language-${lang || "javascript"}">${code.replace(/</g, "&lt;").replace(/>/g, "&gt;").trim()}</code></pre></div>`,
+            );
+            return id;
+          })
+          .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+          .replace(/^\s*-\s+(.*)/gm, "<li>$1</li>")
+          .replace(/\n/g, "<br>");
+        codeBlocks.forEach(
+          (b, i) => (cleanText = cleanText.replace(`BLOCK_${i}`, b)),
+        );
+        return cleanText;
+      }
+
+      function appendMessage(content, from, isHistory = false) {
+        const row = document.createElement("div");
+        row.className = `flex w-full ${from === "user" ? "user" : "bot"}`;
+        const bubble = document.createElement("div");
+        bubble.className = "message-bubble";
+        bubble.innerHTML = prepareContent(content);
+        row.appendChild(bubble);
+        chatArea.appendChild(row);
+        if (!isHistory) {
+          chatArea.scrollTop = chatArea.scrollHeight;
+          Prism.highlightAllUnder(bubble);
+        }
+      }
+
+      async function sendMessage() {
+        const text = userInput.value.trim();
+        if (!text) return;
+        inputWrapper.classList.remove("centered");
+        welcomeText.classList.add("hidden");
+        footerTag.classList.add("hidden");
+        appendMessage(text, "user");
+        saveMsg(text, "user");
+        userInput.value = "";
+        try {
+          const res = await fetch(
+            "https://red-phantom-chat-bot-back-wfjk.vercel.app/api/chat",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                sessionId: currentSession,
+                message: text,
+              }),
+            },
+          );
+          const data = await res.json();
+          appendMessage(data.reply, "bot");
+          saveMsg(data.reply, "bot");
+        } catch {
+          appendMessage("Analysis error: Connection lost.", "bot");
+        }
+        loadSessions();
+      }
+
+      function saveMsg(text, from) {
+        let chat = JSON.parse(
+          localStorage.getItem("rp_chat_" + currentSession) || "[]",
+        );
+        chat.push({ from, text });
+        localStorage.setItem("rp_chat_" + currentSession, JSON.stringify(chat));
+      }
+
+      function loadChat() {
+        chatArea.innerHTML = "";
+        let chat = JSON.parse(
+          localStorage.getItem("rp_chat_" + currentSession) || "[]",
+        );
+        if (chat.length > 0) {
+          inputWrapper.classList.remove("centered");
+          welcomeText.classList.add("hidden");
+          footerTag.classList.add("hidden");
+          chat.forEach((m) => appendMessage(m.text, m.from, true));
+          Prism.highlightAllUnder(chatArea);
+          chatArea.scrollTop = chatArea.scrollHeight;
+        } else {
+          inputWrapper.classList.add("centered");
+          welcomeText.classList.remove("hidden");
+          footerTag.classList.remove("hidden");
+        }
+      }
+
+      function copyCode(btn) {
+        const code = btn.parentElement.nextElementSibling.innerText;
+        navigator.clipboard.writeText(code);
+        btn.innerText = "Copied!";
+        setTimeout(() => (btn.innerText = "Copy"), 2000);
+      }
+
+      sendBtn.onclick = sendMessage;
+      userInput.onkeypress = (e) => {
+        if (e.key === "Enter") sendMessage();
+      };
+      loadSessions();
+      loadChat();
+    </script>
+  </body>
+</html>
